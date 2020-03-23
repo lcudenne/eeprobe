@@ -39,34 +39,34 @@
 
 ## Quick start
 
-The 'eetest' program is a basic send-receive MPI application in which
+The `eetest` program is a basic send-receive MPI application in which
 a process periodically sends messages to a receiver. This receiver
-uses the 'EEProbe' implementation of the micro-sleep strategy to save
+uses the `EEProbe` implementation of the micro-sleep strategy to save
 CPU time while waiting for messages. The following instructions show
 how to build and test this program.
 
 Open a terminal:
-'''
+```
 cd C/
 make
-'''
+```
 
 Open a second terminal and run the top command to monitor the CPU load:
-'''
+```
 top
-'''
+```
 
-On the first terminal, run the 'eetest' program ('EEProbe disabled'):
-'''
+On the first terminal, run the `eetest` program (`EEProbe disabled`):
+```
 mpirun --np 2 ./eetest disable
-'''
+```
 
-The top command should show that the 'eetest' command takes 100% of the CPU.
+The top command should show that the `eetest` command takes 100% of the CPU.
 
-On the first terminal, run the 'eetest' program ('EEProbe enabled'):
-'''
+On the first terminal, run the `eetest` program (`EEProbe enabled`):
+```
 mpirun --np 2 ./eetest
-'''
+```
 
-The 'eetest' command should now take only a few percent of the CPU.
+The `eetest` command should now take only a few percent of the CPU.
 
