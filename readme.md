@@ -58,14 +58,14 @@ top
 
 On the first terminal, run the `eetest` program (`EEProbe disabled`):
 ```
-mpirun --np 2 ./eetest disable
+mpirun -np 2 ./eetest disable
 ```
 
 The `top` command should show that the `eetest` command takes 100% of the CPU.
 
 On the first terminal, run the `eetest` program (`EEProbe enabled`):
 ```
-mpirun --np 2 ./eetest
+mpirun -np 2 ./eetest
 ```
 
 The `eetest` command should now take only a few percent of the CPU.
