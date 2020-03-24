@@ -151,7 +151,7 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
   } else {
 
     if (enable == EEPROBE_ENABLE) {
-      fprintf(stdout, "%lu rank %d min_yield_time %d max_yield_time %d inc_yield_time %d\n",
+      fprintf(stdout, "%lu rank %d min_yield_time %ld max_yield_time %ld inc_yield_time %ld\n",
 	      EEPROBE_getTime() - start_time, rank,
 	      EEPROBE_getMinYieldTime(), EEPROBE_getMaxYieldTime(), EEPROBE_getIncYieldTime());
     }
@@ -166,7 +166,7 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
       assert(errno == MPI_SUCCESS);
 
       if (enable == EEPROBE_ENABLE) {
-	fprintf(stdout, "%lu rank %d recv %d last_yield_time %d total_sleep_time %lu\n",
+	fprintf(stdout, "%lu rank %d recv %d last_yield_time %ld total_sleep_time %lu\n",
 		EEPROBE_getTime() - start_time, rank, i,
 		EEPROBE_getLastYieldTime(), EEPROBE_getTotalSleepTime());
       } else {

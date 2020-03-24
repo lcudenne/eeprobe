@@ -82,7 +82,7 @@ mechanism. This function is synchronous and returns when a matching
 message is being delivered by the MPI runtime.
 
 ```
-void EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
+int EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
 ```
 
 The following code snippet shows how to use the `EEPROBE_Probe`

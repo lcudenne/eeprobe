@@ -18,6 +18,9 @@
 
 /* ---------------------------------------------------------------------------------- */
 
+/* assert */
+#include <assert.h>
+
 /* gettimeofday */
 #include <sys/time.h>
 
@@ -43,49 +46,55 @@
 
 /* ---------------------------------------------------------------------------------- */
 
-static int _EEPROBE_LAST_YIELD_TIME = 0;
+static long _EEPROBE_LAST_YIELD_TIME = 0;
 
-static int _EEPROBE_MAX_YIELD_TIME = 1000;
+static long _EEPROBE_MAX_YIELD_TIME = 1000;
 
-static int _EEPROBE_MIN_YIELD_TIME = 0;
+static long _EEPROBE_MIN_YIELD_TIME = 0;
 
-static unsigned int _EEPROBE_INC_YIELD_TIME = 1;
+static long _EEPROBE_INC_YIELD_TIME = 1;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME = 0;
 
 /* ---------------------------------------------------------------------------------- */
 
 void
-EEPROBE_setMinYieldTime(int min_yield_time) {
+EEPROBE_setMinYieldTime(long min_yield_time) {
+  assert(min_yield_time >= 0);
+  assert(min_yield_time < 1000000000);
   _EEPROBE_MIN_YIELD_TIME = min_yield_time;
 }
 
 void
-EEPROBE_setMaxYieldTime(int max_yield_time) {
+EEPROBE_setMaxYieldTime(long max_yield_time) {
+  assert(max_yield_time > 0);
+  assert(max_yield_time < 1000000000);
   _EEPROBE_MAX_YIELD_TIME = max_yield_time;
 }
 
 void
-EEPROBE_setIncYieldTime(int inc_yield_time) {
+EEPROBE_setIncYieldTime(long inc_yield_time) {
+  assert(inc_yield_time > 0);
+  assert(inc_yield_time < 1000000000);
   _EEPROBE_INC_YIELD_TIME = inc_yield_time;
 }
 
-int
+long
 EEPROBE_getMinYieldTime() {
   return _EEPROBE_MIN_YIELD_TIME;
 }
 
-int
+long
 EEPROBE_getMaxYieldTime() {
   return _EEPROBE_MAX_YIELD_TIME;
 }
 
-int
+long
 EEPROBE_getIncYieldTime() {
   return _EEPROBE_INC_YIELD_TIME;
 }
 
-int
+long
 EEPROBE_getLastYieldTime() {
   return _EEPROBE_LAST_YIELD_TIME;
 }
@@ -111,8 +120,8 @@ EEPROBE_getTime() {
 /* ---------------------------------------------------------------------------------- */
 
 
-void
-EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable) {
+int
+EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable) {
 
 
 #if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
@@ -121,6 +130,8 @@ EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Ena
   
   int flag = 0;
 
+  int errno = MPI_SUCCESS;
+    
   struct timespec current_yield_duration;
 
   if (enable == EEPROBE_ENABLE) {
@@ -128,9 +139,9 @@ EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Ena
     current_yield_duration.tv_sec = 0;
     current_yield_duration.tv_nsec = _EEPROBE_MIN_YIELD_TIME;
 
-    while (flag == 0) {
+    while ((flag == 0) && (errno == MPI_SUCCESS)) {
 
-      MPI_Iprobe(srce, tag, comm, &flag, status);
+      errno = MPI_Iprobe(source, tag, comm, &flag, status);
 
       if (flag == 0) {
 
@@ -159,10 +170,12 @@ EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Ena
 
   } else {
 
-    MPI_Probe(srce, tag, comm, status);
+    errno = MPI_Probe(source, tag, comm, status);
 
   }
 
+  return errno;
+  
 }
 
 
