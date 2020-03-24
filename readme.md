@@ -51,7 +51,7 @@ cd C/
 make
 ```
 
-Open a second terminal and run the top command to monitor the CPU load:
+Open a second terminal and run the `top` command to monitor the CPU load:
 ```
 top
 ```
@@ -61,7 +61,7 @@ On the first terminal, run the `eetest` program (`EEProbe disabled`):
 mpirun --np 2 ./eetest disable
 ```
 
-The top command should show that the `eetest` command takes 100% of the CPU.
+The `top` command should show that the `eetest` command takes 100% of the CPU.
 
 On the first terminal, run the `eetest` program (`EEProbe enabled`):
 ```
@@ -69,4 +69,45 @@ mpirun --np 2 ./eetest
 ```
 
 The `eetest` command should now take only a few percent of the CPU.
+
+
+
+## Replace the default MPI `Probe` function with `EEProbe` in applications
+
+`EEProbe` has been designed to transparently replace the default MPI
+`Probe` function in the user code. The main function is
+`EEPROBE_Probe`, which takes the same parameters as `Probe` and a
+specific parameter to enable or disable the micro-sleeping
+mechanism. This function is synchronous and returns when a matching
+message is being delivered by the MPI runtime.
+
+```
+void EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
+```
+
+The following code snippet shows how to use the `EEPROBE_Probe`
+function before receiving a message.
+
+```
+#include "eeprobe.h"
+
+void
+receiveProcess(char * buffer, int count, int remote_rank) {
+
+ int errno = MPI_SUCCESS;
+
+ MPI_Status status;
+
+ assert(buffer);
+ assert(count > 0);
+
+ EEPROBE_Probe(remote_rank, 0, MPI_COMM_WORLD, &status, EEPROBE_ENABLE);
+
+ errno = MPI_Recv(buffer, count, MPI_CHAR, remote_rank,
+        	  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+ assert(errno == MPI_SUCCESS);
+
+}
+```
 
