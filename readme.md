@@ -82,7 +82,7 @@ mechanism. This function is synchronous and returns when a matching
 message is being delivered by the MPI runtime.
 
 ```
-int EEPROBE_Probe(int srce, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
+int EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
 ```
 
 The following code snippet shows how to use the `EEPROBE_Probe`
@@ -111,3 +111,106 @@ receiveProcess(char * buffer, int count, int remote_rank) {
 }
 ```
 
+
+## Going further
+
+The `EEProbe` function works as follow: 1) a call to the non-blocking
+MPI function `Iprobe` to check if an incoming message is available and
+2) if no message is available, a call to the system sleep function
+`clock_nanosleep`. The sleep duration starts at a minimum value
+`min_yield_time` and is incremented after each unsuccessful `Iprobe`
+by a given step `inc_yield_time` up to a maximum value
+`max_yield_time`. When a message is available the `EEProbe` function
+returns and the sleep duration is resett to the minimum value. This
+way, the system is able to handle communication bursts as well as long
+idle times. The following pseudo-code is close to the actual
+implementation.
+
+```
+void EEProbe() {
+
+ int flag = 0;
+ unsigned long yield_time = 0;
+ long yield_time = min_yield_time;
+
+ while (flag == 0) {
+
+  Iprobe(&flag);
+
+  if (flag == 0) {
+   clock_nanosleep(yield_time);
+   yield_time += inc_yield_time;
+   if (yield_time > max_yield_time) {
+    yield_time = max_yield_time;
+   }
+  } else {
+   last_yield_time = yield_time;
+  }
+  
+ }
+ 
+}
+```
+
+The default values for `EEProbe` are:
+
+```
+static long _EEPROBE_MAX_YIELD_TIME = 1000;
+
+static long _EEPROBE_MIN_YIELD_TIME = 0;
+
+static long _EEPROBE_INC_YIELD_TIME = 1;
+```
+
+The following functions are used to read and modify these values:
+
+```
+  /**
+   * Set the smallest yield time.
+   * @param min_yield_time In nanoseconds, must be set within range [0;1000000000[
+   */
+void EEPROBE_setMinYieldTime(long min_yield_time);
+
+  /**
+   * Set the maximum yield time.
+   * @param max_yield_time In nanoseconds, must be set within range ]0;1000000000[
+   */
+void EEPROBE_setMaxYieldTime(long max_yield_time);
+
+  /**
+   * Set the incremental step time.
+   * @param inc_yield_time In nanoseconds, must be set within range ]0;1000000000[
+   */
+void EEPROBE_setIncYieldTime(long inc_yield_time);
+
+  /**
+   * Returns the current minimum yield time.
+   * @return Current minimum yield time in nanoseconds.
+   */
+long EEPROBE_getMinYieldTime();
+
+  /**
+   * Returns the current maximum yield time.
+   * @return Current maximum yield time in nanoseconds.
+   */
+long EEPROBE_getMaxYieldTime();
+
+  /**
+   * Returns the current incremental step yield time.
+   * @return Current incremental step yield time in nanoseconds.
+   */
+long EEPROBE_getIncYieldTime();
+
+  /**
+   * Returns the last yield time applied before receiving a message.
+   * @return Last yield time in nanoseconds.
+   */
+long EEPROBE_getLastYieldTime();
+
+  /**
+   * Returns the total sleep duration since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTime();
+```
