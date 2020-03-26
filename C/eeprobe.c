@@ -154,19 +154,17 @@ EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_E
 #if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
 	_EEPROBE_TOTAL_SLEEP_TIME += EEPROBE_getTime() - start;      
 #endif
-      
-	if (current_yield_duration.tv_nsec < _EEPROBE_MAX_YIELD_TIME) {
-	  current_yield_duration.tv_nsec += _EEPROBE_INC_YIELD_TIME;
+
+	current_yield_duration.tv_nsec += _EEPROBE_INC_YIELD_TIME;
+	if (current_yield_duration.tv_nsec > _EEPROBE_MAX_YIELD_TIME) {
+	  current_yield_duration.tv_nsec = _EEPROBE_MAX_YIELD_TIME;
 	}
 
-      } else {
-      
-	_EEPROBE_LAST_YIELD_TIME = current_yield_duration.tv_nsec;
-	current_yield_duration.tv_nsec = _EEPROBE_MIN_YIELD_TIME;
-      
       }
 
     }
+
+    _EEPROBE_LAST_YIELD_TIME = current_yield_duration.tv_nsec;
 
   } else {
 
