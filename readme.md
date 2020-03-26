@@ -47,30 +47,36 @@ CPU time while waiting for messages. The following instructions show
 how to build and test this program.
 
 Open a terminal:
-```
+```shell
 cd C/
 make
 ```
 
 Open a second terminal and run the `top` command to monitor the CPU load:
-```
+```shell
 top
 ```
 
 On the first terminal, run the `eetest` program (`EEProbe disabled`):
-```
+```shell
 mpirun -np 2 ./eetest disable
 ```
 
 The `top` command should show that the `eetest` command takes 100% of the CPU.
 
 On the first terminal, run the `eetest` program (`EEProbe enabled`):
-```
+```shell
 mpirun -np 2 ./eetest
 ```
 
 The `eetest` command should now take only a few percent of the CPU.
 
+The same test using the Python implementation:
+```shell
+cd Python
+mpirun -np 2 python3 ./eetest.py disable
+mpirun -np 2 python3 ./eetest.py
+```
 
 
 ## Replace the default MPI `Probe` function with `EEProbe` in applications
@@ -82,14 +88,15 @@ specific parameter to enable or disable the micro-sleeping
 mechanism. This function is synchronous and returns when a matching
 message is being delivered by the MPI runtime.
 
-```
+```C
 int EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
 ```
 
 The following code snippet shows how to use the `EEPROBE_Probe`
 function before receiving a message.
 
-```
+C
+```C
 #include "eeprobe.h"
 
 void
@@ -111,6 +118,16 @@ receiveProcess(char * buffer, int count, int remote_rank) {
 
 }
 ```
+Python
+```Python
+from eeprobe import *
+
+def receiveProcess(mpbuffer, remote_rank):
+    comm = MPI.COMM_WORLD
+    eep = EEProbe()
+    eep.probe(comm, source = remote_rank, tag = 0)
+    mpbuffer = comm.recv(source = remote_rank, tag = 0)
+```
 
 
 ## Going further
@@ -127,7 +144,7 @@ way, the system is able to handle communication bursts as well as long
 idle times. The following pseudo-code is close to the actual
 implementation.
 
-```
+```C
 void EEProbe() {
 
  int flag = 0;
@@ -155,7 +172,7 @@ void EEProbe() {
 
 The default values for `EEProbe` are:
 
-```
+```C
 static long _EEPROBE_MAX_YIELD_TIME = 1000;
 
 static long _EEPROBE_MIN_YIELD_TIME = 0;
@@ -165,7 +182,7 @@ static long _EEPROBE_INC_YIELD_TIME = 1;
 
 The following functions are used to read and modify these values:
 
-```
+```C
   /**
    * Set the smallest yield time.
    * @param min_yield_time In nanoseconds, must be set within range [0;1000000000[
