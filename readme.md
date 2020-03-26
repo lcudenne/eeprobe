@@ -35,7 +35,8 @@
   receiving processes are put to sleep instead of constantly
   polling. We implement this strategy at the user level to be
   transparent to the MPI runtime and the application. **EEProbe** is
-  an open-source implementation of this strategy.
+  an open-source implementation of this strategy for C MPI runtimes
+  and the @mpi4py Python runtime.
 
 ## Quick start
 
