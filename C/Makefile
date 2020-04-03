@@ -1,6 +1,5 @@
 CC=mpicc
 CFLAGS=-g -fPIC -Wall -Werror
-LDFLAGS=-lmpi
 DEPS = eeprobe.h
 OBJ = eeprobe.o eetest.o 
 
@@ -8,5 +7,5 @@ OBJ = eeprobe.o eetest.o
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 eetest: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CC) -o $@ $^
 
