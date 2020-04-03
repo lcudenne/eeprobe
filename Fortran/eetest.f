@@ -18,11 +18,13 @@ c$$$    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 c$$$ ----------------------------------------------------------------------------------
 
-      SUBROUTINE EEPROBE_SendRecv()
+      SUBROUTINE EEPROBE_SendRecv(ENABLE)
 
       use mpi
       use EEProbe
 
+      logical ENABLE
+      
       integer :: EEPROBE_COUNT = 1          
       integer :: EEPROBE_TAG = 0
       integer :: EEPROBE_RANK_SEND = 0
@@ -30,7 +32,8 @@ c$$$ ---------------------------------------------------------------------------
       integer :: EEPROBE_NB_ITER = 24
       integer :: EEPROBE_INTER_MSG_SLEEP_S = 1
       
-      integer rank, er
+      integer rank, status
+      integer :: er = MPI_SUCCESS
       integer start_time, t
       integer :: i = 0
       integer :: buffer = 42
@@ -53,19 +56,23 @@ c$$$ ---------------------------------------------------------------------------
             i = i + 1
             call sleep(EEPROBE_INTER_MSG_SLEEP_S)
             goto 10
-         endif
+         end if
          
       else
          
  20      if (i <EEPROBE_NB_ITER) then
+            call EEPROBE_Probe(EEPROBE_RANK_SEND, EEPROBE_TAG,
+     &           MPI_COMM_WORLD, status, er, ENABLE)
+            
             call MPI_RECV(buffer, EEPROBE_COUNT, MPI_INTEGER,
      &           EEPROBE_RANK_SEND, EEPROBE_TAG,
      &           MPI_COMM_WORLD, MPI_STATUS_IGNORE, er)
+            
             t = EEPROBE_getTime() - start_time
             print *, t, "rank", rank, "recv", i
             i = i + 1
             goto 20
-         endif
+         end if
            
       end if
       
@@ -75,7 +82,11 @@ c$$$ ---------------------------------------------------------------------------
 c$$$ ----------------------------------------------------------------------------------
 
       PROGRAM eetest
-        
+
+      use mpi
+      
+      logical :: enable = .TRUE.
+      
       CHARACTER(len=32) arg
       CHARACTER(len=32) bin_name
       integer rank, nr, er
@@ -85,8 +96,9 @@ c$$$ ---------------------------------------------------------------------------
       call getarg(0, bin_name)
       call getarg(1, arg)
 
-c$$$        if (arg == "disable") then
-c$$$        endif
+      if (arg == "disable") then
+         enable = .FALSE.
+      end if
         
       call MPI_INIT(er)
       call MPI_COMM_SIZE(MPI_COMM_WORLD, nr, er)
@@ -98,7 +110,7 @@ c$$$        endif
 
       if (nr == 2) then
 
-         call EEPROBE_SendRecv()
+         call EEPROBE_SendRecv(enable)
          
       else
 
