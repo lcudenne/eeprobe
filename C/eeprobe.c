@@ -239,6 +239,31 @@ EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
 /* ---------------------------------------------------------------------------------- */
 
 
+int
+EEPROBE_Reduce(const void *sendbuf, void *recvbuf, int count,
+	       MPI_Datatype datatype, MPI_Op op, int root,
+	       MPI_Comm comm, EEPROBE_Enable enable) {
 
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Ireduce(sendbuf, recvbuf, count, datatype, op, root, comm, &request);
+
+    errno = EEPROBE_Wait(&request, &status, enable);
+
+  } else {
+
+    errno = MPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm);
+
+  }
+
+  return errno;
+
+}
 
 /* ---------------------------------------------------------------------------------- */

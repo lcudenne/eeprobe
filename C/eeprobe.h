@@ -77,6 +77,28 @@ EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_E
 int
 EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable);
 
+/* ---------------------------------------------------------------------------------- */
+
+  /**
+   * EEPROBE_Reduce takes the same parameters
+   * as the default MPI Reduce function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous and reduces values on
+   * all processes within a group.
+   *
+   * @param sendbuf Address of send buffer.
+   * @param recvbuf Address of receive buffer.
+   * @param count Number of elements in send buffer.
+   * @param datatype Data type of elements of send buffer.
+   * @param op Reduce operation.
+   * @param root Rank of root process.
+   * @param comm Communicator (handle).
+   * @param enable Enable or disable the micro-sleep mechanism.
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Reduce(const void *sendbuf, void *recvbuf, int count,
+	       MPI_Datatype datatype, MPI_Op op, int root,
+	       MPI_Comm comm, EEPROBE_Enable enable);
 
 /* ---------------------------------------------------------------------------------- */
 

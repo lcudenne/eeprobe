@@ -59,7 +59,7 @@
 
 /* ---------------------------------------------------------------------------------- */
 
-#define EEPROBE_NB_ITER 24
+#define EEPROBE_NB_ITER 12
 
 #define EEPROBE_INTER_MSG_SLEEP_S 1
 #define EEPROBE_INTER_MSG_SLEEP_NS 0
@@ -105,7 +105,76 @@ EEPROBE_getHostName() {
 /* ---------------------------------------------------------------------------------- */
 
 static void
-EEPROBE_sendRecv(EEPROBE_Enable enable) {
+EEPROBE_collective(EEPROBE_Enable enable, unsigned long start_time) {
+
+  int rank = 0;
+
+  unsigned int i = 0;
+
+
+  int * buffer = NULL;
+
+  int * collective_result = NULL;
+
+  int errno = MPI_SUCCESS;
+
+  struct timespec sender_sleep;
+
+  rank = EEPROBE_getTaskId(MPI_COMM_WORLD);
+  
+  fprintf(stdout, "%lu rank %d start collective\n", EEPROBE_getTime() - start_time, rank);
+
+  buffer = malloc(sizeof(int));
+  assert(buffer);
+
+  collective_result = malloc(sizeof(int));
+  assert(collective_result);
+  *collective_result = 0;
+ 
+  sender_sleep.tv_sec = EEPROBE_INTER_MSG_SLEEP_S;
+  sender_sleep.tv_nsec = EEPROBE_INTER_MSG_SLEEP_NS;
+    
+  for (i = 0; i < EEPROBE_NB_ITER; i++) {
+
+    *buffer = rank + 1 + i;
+    
+    if (rank == EEPROBE_RANK_SEND) {
+      clock_nanosleep(CLOCK_MONOTONIC, 0, &sender_sleep, NULL);
+    }
+
+    errno = EEPROBE_Reduce(buffer, collective_result, 1, MPI_INT,
+			   MPI_SUM, EEPROBE_RANK_SEND, MPI_COMM_WORLD, enable);
+
+    assert(errno == MPI_SUCCESS);
+
+    if (enable == EEPROBE_ENABLE) {
+      fprintf(stdout,
+	      "%lu rank %d collective %d reduce %d last_yield_time %ld total_sleep_time %lu\n",
+	      EEPROBE_getTime() - start_time, rank, i, *collective_result,
+	      EEPROBE_getLastYieldTime(), EEPROBE_getTotalSleepTime());
+    } else {
+      fprintf(stdout, "%lu rank %d collective %d reduce %d \n",
+	      EEPROBE_getTime() - start_time, rank, i, *collective_result);
+    }
+
+   
+  }
+
+
+  fprintf(stdout, "%lu rank %d end collective\n", EEPROBE_getTime() - start_time, rank);
+
+  free(buffer);
+  buffer = NULL;
+
+  free(collective_result);
+  collective_result = NULL;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+static void
+EEPROBE_sendRecv(EEPROBE_Enable enable, unsigned long start_time) {
 
   int rank = 0;
 
@@ -120,17 +189,13 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
   MPI_Request request;
 
   struct timespec sender_sleep;
-
-  unsigned long start_time = 0;
   
-  rank = EEPROBE_getTaskId(MPI_COMM_WORLD); 
+  rank = EEPROBE_getTaskId(MPI_COMM_WORLD);
 
   buffer = malloc(sizeof(char) * EEPROBE_COUNT);
   assert(buffer);
 
-  start_time = EEPROBE_getTime();
-  
-  fprintf(stdout, "%lu rank %d start\n", EEPROBE_getTime() - start_time, rank);
+  fprintf(stdout, "%lu rank %d start sendrecv\n", EEPROBE_getTime() - start_time, rank);
 
   if (rank == EEPROBE_RANK_SEND) {
     
@@ -150,7 +215,7 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
 
     }
 
-  } else {
+  } else if (rank == EEPROBE_RANK_RECV) {
 
     if (enable == EEPROBE_ENABLE) {
       fprintf(stdout, "%lu rank %d min_yield_time %ld max_yield_time %ld inc_yield_time %ld\n",
@@ -206,7 +271,7 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
 
   }
 
-  fprintf(stdout, "%lu rank %d end\n", EEPROBE_getTime() - start_time, rank);
+  fprintf(stdout, "%lu rank %d end sendrecv\n", EEPROBE_getTime() - start_time, rank);
 
   free(buffer);
   buffer = NULL;
@@ -225,6 +290,10 @@ main(int argc, char *argv[]) {
 
   EEPROBE_Enable enable = EEPROBE_ENABLE;
 
+  unsigned long start_time = 0;
+
+  start_time = EEPROBE_getTime();
+  
   if ((argc > 1) && (strcmp(argv[1], "disable") == 0)) {
     enable = EEPROBE_DISABLE;
   }
@@ -233,18 +302,20 @@ main(int argc, char *argv[]) {
 
   hostname = EEPROBE_getHostName();
 
-  fprintf(stdout, "rank %d on %s\n",
+  fprintf(stdout, "%lu rank %d on %s\n",
+	  EEPROBE_getTime() - start_time,
 	  EEPROBE_getTaskId(MPI_COMM_WORLD), hostname);
   free(hostname);
   
   nr = EEPROBE_getTaskNr(MPI_COMM_WORLD);
 
-  if (nr == 2) {
+  if (nr >= 2) {
 
-    EEPROBE_sendRecv(enable);
+    EEPROBE_collective(enable, start_time);
+    EEPROBE_sendRecv(enable, start_time);
 
   } else {
-    fprintf(stdout, "Warning: MPI task nr is %d. Expected 2. Usage:\nmpirun -np 2 %s\nmpirun -np 2 %s disable\n",
+    fprintf(stdout, "Warning: MPI task nr is %d. Expected >= 2. Usage:\nmpirun -np 4 %s\nmpirun -np 4 %s disable\n",
 	    nr, argv[0], argv[0]);
   }
 
