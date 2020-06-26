@@ -22,6 +22,8 @@
 #ifndef EEPROBE_H
 #define EEPROBE_H
 
+/* MPI */
+#include "mpi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,11 +56,14 @@ typedef enum {EEPROBE_ENABLE, EEPROBE_DISABLE} EEPROBE_Enable;
    * @param tag Tag value or MPI_ANY_TAG (integer).
    * @param comm Communicator (handle).
    * @param status Status object (status).
-   * @param enable Enable or disable the micro-sleep mechanism.
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
    * @return MPI routine error value.
    */
 int
-EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
+EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status);
+int
+EEPROBE_Probe_Switch(int source, int tag, MPI_Comm comm, MPI_Status * status,
+		     EEPROBE_Enable enable);
 
 
 /* ---------------------------------------------------------------------------------- */
@@ -71,11 +76,13 @@ EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_E
    *
    * @param request The request handle.
    * @param status Status object (status).
-   * @param enable Enable or disable the micro-sleep mechanism.
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
    * @return MPI routine error value.
    */
 int
-EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable);
+EEPROBE_Wait(MPI_Request *request, MPI_Status *status);
+int
+EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable);
 
 /* ---------------------------------------------------------------------------------- */
 
@@ -92,13 +99,17 @@ EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable);
    * @param op Reduce operation.
    * @param root Rank of root process.
    * @param comm Communicator (handle).
-   * @param enable Enable or disable the micro-sleep mechanism.
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
    * @return MPI routine error value.
    */
 int
 EEPROBE_Reduce(const void *sendbuf, void *recvbuf, int count,
 	       MPI_Datatype datatype, MPI_Op op, int root,
-	       MPI_Comm comm, EEPROBE_Enable enable);
+	       MPI_Comm comm);
+int
+EEPROBE_Reduce_Switch(const void *sendbuf, void *recvbuf, int count,
+		      MPI_Datatype datatype, MPI_Op op, int root,
+		      MPI_Comm comm, EEPROBE_Enable enable);
 
 /* ---------------------------------------------------------------------------------- */
 

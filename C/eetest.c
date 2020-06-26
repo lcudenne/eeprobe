@@ -142,8 +142,8 @@ EEPROBE_collective(EEPROBE_Enable enable, unsigned long start_time) {
       clock_nanosleep(CLOCK_MONOTONIC, 0, &sender_sleep, NULL);
     }
 
-    errno = EEPROBE_Reduce(buffer, collective_result, 1, MPI_INT,
-			   MPI_SUM, EEPROBE_RANK_SEND, MPI_COMM_WORLD, enable);
+    errno = EEPROBE_Reduce_Switch(buffer, collective_result, 1, MPI_INT,
+				  MPI_SUM, EEPROBE_RANK_SEND, MPI_COMM_WORLD, enable);
 
     assert(errno == MPI_SUCCESS);
 
@@ -228,7 +228,7 @@ EEPROBE_sendRecv(EEPROBE_Enable enable, unsigned long start_time) {
 
     for (i = 0; i < EEPROBE_NB_ITER; i++) {
 
-      EEPROBE_Probe(EEPROBE_RANK_SEND, EEPROBE_TAG, MPI_COMM_WORLD, &status, enable);
+      EEPROBE_Probe_Switch(EEPROBE_RANK_SEND, EEPROBE_TAG, MPI_COMM_WORLD, &status, enable);
 
       errno = MPI_Recv(buffer, EEPROBE_COUNT, MPI_CHAR, EEPROBE_RANK_SEND,
 		       EEPROBE_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -255,7 +255,7 @@ EEPROBE_sendRecv(EEPROBE_Enable enable, unsigned long start_time) {
       errno = MPI_Irecv(buffer, EEPROBE_COUNT, MPI_CHAR, EEPROBE_RANK_SEND,
 			EEPROBE_TAG, MPI_COMM_WORLD, &request);
 
-      errno = EEPROBE_Wait(&request, &status, enable);
+      errno = EEPROBE_Wait_Switch(&request, &status, enable);
 
       if (enable == EEPROBE_ENABLE) {
 	fprintf(stdout,

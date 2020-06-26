@@ -33,11 +33,6 @@
 /* gettimeofday */
 #include <sys/time.h>
 
-/* MPI */
-#include "mpi.h"
-
-
-
 /* ---------------------------------------------------------------------------------- */
 
 
@@ -119,9 +114,14 @@ EEPROBE_getTime() {
 
 /* ---------------------------------------------------------------------------------- */
 
+int
+EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status) {
+  return EEPROBE_Probe_Switch(source, tag, comm, status, EEPROBE_ENABLE);
+}
 
 int
-EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable) {
+EEPROBE_Probe_Switch(int source, int tag, MPI_Comm comm, MPI_Status * status,
+		     EEPROBE_Enable enable) {
 
 
 #if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
@@ -178,9 +178,13 @@ EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_E
 
 /* ---------------------------------------------------------------------------------- */
 
+int
+EEPROBE_Wait(MPI_Request *request, MPI_Status *status) {
+  return EEPROBE_Wait_Switch(request, status, EEPROBE_ENABLE);
+}
 
 int
-EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
+EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
 
 
 #if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
@@ -241,8 +245,15 @@ EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
 
 int
 EEPROBE_Reduce(const void *sendbuf, void *recvbuf, int count,
-	       MPI_Datatype datatype, MPI_Op op, int root,
-	       MPI_Comm comm, EEPROBE_Enable enable) {
+		      MPI_Datatype datatype, MPI_Op op, int root,
+		      MPI_Comm comm) {
+  return EEPROBE_Reduce_Switch(sendbuf, recvbuf, count, datatype, op, root, comm, EEPROBE_ENABLE);
+}
+
+int
+EEPROBE_Reduce_Switch(const void *sendbuf, void *recvbuf, int count,
+		      MPI_Datatype datatype, MPI_Op op, int root,
+		      MPI_Comm comm, EEPROBE_Enable enable) {
 
   MPI_Request request;
 
@@ -254,7 +265,7 @@ EEPROBE_Reduce(const void *sendbuf, void *recvbuf, int count,
 
     errno = MPI_Ireduce(sendbuf, recvbuf, count, datatype, op, root, comm, &request);
 
-    errno = EEPROBE_Wait(&request, &status, enable);
+    errno = EEPROBE_Wait_Switch(&request, &status, enable);
 
   } else {
 

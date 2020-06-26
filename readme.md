@@ -89,7 +89,7 @@ mechanism. This function is synchronous and returns when a matching
 message is being delivered by the MPI runtime.
 
 ```C
-int EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
+int EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status);
 ```
 
 The following code snippet shows how to use the `EEPROBE_Probe`
@@ -109,7 +109,7 @@ receiveProcess(char * buffer, int count, int remote_rank) {
  assert(buffer);
  assert(count > 0);
 
- EEPROBE_Probe(remote_rank, 0, MPI_COMM_WORLD, &status, EEPROBE_ENABLE);
+ EEPROBE_Probe(remote_rank, 0, MPI_COMM_WORLD, &status);
 
  errno = MPI_Recv(buffer, count, MPI_CHAR, remote_rank,
         	  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
