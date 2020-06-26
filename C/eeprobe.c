@@ -176,6 +176,65 @@ EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_E
   
 }
 
+/* ---------------------------------------------------------------------------------- */
+
+
+int
+EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
+
+
+#if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
+  unsigned long start = 0;
+#endif
+  
+  int flag = 0;
+
+  int errno = MPI_SUCCESS;
+    
+  struct timespec current_yield_duration;
+
+  if (enable == EEPROBE_ENABLE) {
+    
+    current_yield_duration.tv_sec = 0;
+    current_yield_duration.tv_nsec = _EEPROBE_MIN_YIELD_TIME;
+
+    while ((flag == 0) && (errno == MPI_SUCCESS)) {
+
+      errno = MPI_Test(request, &flag, status);
+
+      if (flag == 0) {
+
+#if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
+	start = EEPROBE_getTime();
+#endif
+      
+	clock_nanosleep(CLOCK_MONOTONIC, 0, &current_yield_duration, NULL);
+
+#if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
+	_EEPROBE_TOTAL_SLEEP_TIME += EEPROBE_getTime() - start;      
+#endif
+
+	current_yield_duration.tv_nsec += _EEPROBE_INC_YIELD_TIME;
+	if (current_yield_duration.tv_nsec > _EEPROBE_MAX_YIELD_TIME) {
+	  current_yield_duration.tv_nsec = _EEPROBE_MAX_YIELD_TIME;
+	}
+
+      }
+
+    }
+
+    _EEPROBE_LAST_YIELD_TIME = current_yield_duration.tv_nsec;
+
+  } else {
+
+    errno = MPI_Wait(request, status);
+
+  }
+
+  return errno;
+  
+}
+
 
 /* ---------------------------------------------------------------------------------- */
 

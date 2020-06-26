@@ -45,7 +45,7 @@ typedef enum {EEPROBE_ENABLE, EEPROBE_DISABLE} EEPROBE_Enable;
 /* ---------------------------------------------------------------------------------- */
 
   /**
-   * The main function is EEPROBE_Probe, which takes the same parameters
+   * EEPROBE_Probe takes the same parameters
    * as the default MPI Probe function and a specific parameter to enable or disable
    * the micro-sleeping mechanism. This function is synchronous and returns when a
    * matching message is being delivered by the MPI runtime.
@@ -59,6 +59,24 @@ typedef enum {EEPROBE_ENABLE, EEPROBE_DISABLE} EEPROBE_Enable;
    */
 int
 EEPROBE_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status, EEPROBE_Enable enable);
+
+
+/* ---------------------------------------------------------------------------------- */
+
+  /**
+   * EEPROBE_Wait takes the same parameters
+   * as the default MPI Wait function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous and waits for an MPI
+   * send or receive to complete.
+   *
+   * @param request The request handle.
+   * @param status Status object (status).
+   * @param enable Enable or disable the micro-sleep mechanism.
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Wait(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable);
+
 
 /* ---------------------------------------------------------------------------------- */
 

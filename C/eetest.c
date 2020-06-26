@@ -117,6 +117,8 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
 
   MPI_Status status;
 
+  MPI_Request request;
+
   struct timespec sender_sleep;
 
   unsigned long start_time = 0;
@@ -129,13 +131,13 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
   start_time = EEPROBE_getTime();
   
   fprintf(stdout, "%lu rank %d start\n", EEPROBE_getTime() - start_time, rank);
-  
+
   if (rank == EEPROBE_RANK_SEND) {
     
     sender_sleep.tv_sec = EEPROBE_INTER_MSG_SLEEP_S;
     sender_sleep.tv_nsec = EEPROBE_INTER_MSG_SLEEP_NS;
     
-    for (i = 0; i < EEPROBE_NB_ITER; i++) {
+    for (i = 0; i < EEPROBE_NB_ITER * 2; i++) {
 
       errno = MPI_Send(buffer, EEPROBE_COUNT, MPI_CHAR, EEPROBE_RANK_RECV,
 		       EEPROBE_TAG, MPI_COMM_WORLD);
@@ -155,7 +157,10 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
 	      EEPROBE_getTime() - start_time, rank,
 	      EEPROBE_getMinYieldTime(), EEPROBE_getMaxYieldTime(), EEPROBE_getIncYieldTime());
     }
-      
+
+
+    /* using Probe Recv */
+
     for (i = 0; i < EEPROBE_NB_ITER; i++) {
 
       EEPROBE_Probe(EEPROBE_RANK_SEND, EEPROBE_TAG, MPI_COMM_WORLD, &status, enable);
@@ -166,11 +171,35 @@ EEPROBE_sendRecv(EEPROBE_Enable enable) {
       assert(errno == MPI_SUCCESS);
 
       if (enable == EEPROBE_ENABLE) {
-	fprintf(stdout, "%lu rank %d recv %d last_yield_time %ld total_sleep_time %lu\n",
+	fprintf(stdout,
+		"%lu rank %d recv %d probe+recv last_yield_time %ld total_sleep_time %lu\n",
 		EEPROBE_getTime() - start_time, rank, i,
 		EEPROBE_getLastYieldTime(), EEPROBE_getTotalSleepTime());
       } else {
-	fprintf(stdout, "%lu rank %d recv %d\n", EEPROBE_getTime() - start_time, rank, i);
+	fprintf(stdout, "%lu rank %d recv %d probe+recv\n",
+		EEPROBE_getTime() - start_time, rank, i);
+      }
+
+    }
+
+    
+    /* Using Irecv Wait */
+    
+    for (i = 0; i < EEPROBE_NB_ITER; i++) {
+      
+      errno = MPI_Irecv(buffer, EEPROBE_COUNT, MPI_CHAR, EEPROBE_RANK_SEND,
+			EEPROBE_TAG, MPI_COMM_WORLD, &request);
+
+      errno = EEPROBE_Wait(&request, &status, enable);
+
+      if (enable == EEPROBE_ENABLE) {
+	fprintf(stdout,
+		"%lu rank %d recv %d irecv+wait last_yield_time %ld total_sleep_time %lu\n",
+		EEPROBE_getTime() - start_time, rank, i+EEPROBE_NB_ITER,
+		EEPROBE_getLastYieldTime(), EEPROBE_getTotalSleepTime());
+      } else {
+	fprintf(stdout, "%lu rank %d recv %d irecv+wait\n",
+		EEPROBE_getTime() - start_time, rank, i+EEPROBE_NB_ITER);
       }
       
     }
