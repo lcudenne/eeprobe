@@ -44,7 +44,15 @@
   /**
    * Enum type used to identify the MPI action.
    */
-typedef enum {EEPROBE_PROBE, EEPROBE_WAIT, EEPROBE_REDUCE} EEPROBE_ACTION;
+typedef enum {
+	      EEPROBE_PROBE,
+	      EEPROBE_WAIT,
+	      EEPROBE_REDUCE,
+	      EEPROBE_ALLREDUCE,
+	      EEPROBE_ALLTOALL,
+	      EEPROBE_ALLTOALLV,
+	      EEPROBE_ALLTOALLW
+} EEPROBE_ACTION;
 
 
 /* ---------------------------------------------------------------------------------- */
@@ -62,6 +70,15 @@ static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_PROBE = 0;
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_WAIT = 0;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_REDUCE = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW = 0;
+
 
 /* ---------------------------------------------------------------------------------- */
 
@@ -108,7 +125,7 @@ EEPROBE_getLastYieldTime() {
 
 unsigned long
 EEPROBE_getTotalSleepTime() {
-  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE;
+  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW;
 }
 
 unsigned long
@@ -124,6 +141,26 @@ EEPROBE_getTotalSleepTimeWait() {
 unsigned long
 EEPROBE_getTotalSleepTimeReduce() {
   return _EEPROBE_TOTAL_SLEEP_TIME_REDUCE;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeAllreduce() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeAlltoall() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeAlltoallv() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeAlltoallw() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW;
 }
 
 /* ---------------------------------------------------------------------------------- */
@@ -153,6 +190,18 @@ EEPROBE_updateTotalSleepTime(EEPROBE_ACTION action, unsigned long time) {
     break;
   case EEPROBE_REDUCE:
     _EEPROBE_TOTAL_SLEEP_TIME_REDUCE += time;
+    break;
+  case EEPROBE_ALLREDUCE:
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE += time;
+    break;
+  case EEPROBE_ALLTOALL:
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL += time;
+    break;
+  case EEPROBE_ALLTOALLV:
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV += time;
+    break;
+  case EEPROBE_ALLTOALLW:
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW += time;
     break;
   default:
     break;
@@ -333,3 +382,178 @@ EEPROBE_Reduce_Switch(const void *sendbuf, void *recvbuf, int count,
 }
 
 /* ---------------------------------------------------------------------------------- */
+
+
+int
+EEPROBE_Allreduce(const void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) {
+
+  return EEPROBE_Allreduce_Switch(sendbuf, recvbuf, count, datatype, op, comm, EEPROBE_ENABLE);
+
+}
+
+
+int
+EEPROBE_Allreduce_Switch(const void *sendbuf, void *recvbuf, int count,
+			 MPI_Datatype datatype, MPI_Op op, MPI_Comm comm,
+			 EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Iallreduce(sendbuf, recvbuf, count, datatype, op, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_ALLREDUCE);
+
+  } else {
+
+    errno = MPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
+
+  }
+
+  return errno;
+
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+
+int
+EEPROBE_Alltoall(const void *sendbuf, int sendcount,
+		 MPI_Datatype sendtype, void *recvbuf, int recvcount,
+		 MPI_Datatype recvtype, MPI_Comm comm) {
+
+  return EEPROBE_Alltoall_Switch(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm,
+				 EEPROBE_ENABLE);
+
+}
+
+int
+EEPROBE_Alltoall_Switch(const void *sendbuf, int sendcount,
+			MPI_Datatype sendtype, void *recvbuf, int recvcount,
+			MPI_Datatype recvtype, MPI_Comm comm,
+			EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Ialltoall(sendbuf, sendcount, sendtype, recvbuf,
+			  recvcount, recvtype, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_ALLTOALL);
+
+  } else {
+
+    errno = MPI_Alltoall(sendbuf, sendcount, sendtype, recvbuf,
+			 recvcount, recvtype, comm);
+
+  }
+
+  return errno;
+
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+
+int
+EEPROBE_Alltoallv(const void *sendbuf, const int sendcounts[],
+		  const int sdispls[], MPI_Datatype sendtype,
+		  void *recvbuf, const int recvcounts[],
+		  const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm) {
+
+  return EEPROBE_Alltoallv_Switch(sendbuf, sendcounts, sdispls, sendtype,
+				  recvbuf, recvcounts, rdispls, recvtype, comm,
+				  EEPROBE_ENABLE);
+
+}
+
+int
+EEPROBE_Alltoallv_Switch(const void *sendbuf, const int sendcounts[],
+			 const int sdispls[], MPI_Datatype sendtype,
+			 void *recvbuf, const int recvcounts[],
+			 const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm,
+			 EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Ialltoallv(sendbuf, sendcounts, sdispls, sendtype,
+			   recvbuf, recvcounts, rdispls, recvtype, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_ALLTOALLV);
+
+  } else {
+
+    errno = MPI_Alltoallv(sendbuf, sendcounts, sdispls, sendtype,
+			  recvbuf, recvcounts, rdispls, recvtype, comm);
+
+  }
+
+  return errno;
+
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+
+int
+EEPROBE_Alltoallw(const void *sendbuf, const int sendcounts[],
+		  const int sdispls[], const MPI_Datatype sendtypes[],
+		  void *recvbuf, const int recvcounts[], const int rdispls[],
+		  const MPI_Datatype recvtypes[], MPI_Comm comm) {
+
+  return EEPROBE_Alltoallw_Switch(sendbuf, sendcounts, sdispls, sendtypes,
+				  recvbuf, recvcounts, rdispls, recvtypes, comm,
+				  EEPROBE_ENABLE);
+
+}
+
+int
+EEPROBE_Alltoallw_Switch(const void *sendbuf, const int sendcounts[],
+			 const int sdispls[], const MPI_Datatype sendtypes[],
+			 void *recvbuf, const int recvcounts[], const int rdispls[],
+			 const MPI_Datatype recvtypes[], MPI_Comm comm,
+			 EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Ialltoallw(sendbuf, sendcounts, sdispls, sendtypes,
+			   recvbuf, recvcounts, rdispls, recvtypes, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_ALLTOALLV);
+
+  } else {
+
+    errno = MPI_Alltoallw(sendbuf, sendcounts, sdispls, sendtypes,
+			  recvbuf, recvcounts, rdispls, recvtypes, comm);
+
+  }
+
+  return errno;
+
+}
+
+/* ---------------------------------------------------------------------------------- */
+

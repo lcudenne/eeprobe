@@ -114,6 +114,125 @@ EEPROBE_Reduce_Switch(const void *sendbuf, void *recvbuf, int count,
 /* ---------------------------------------------------------------------------------- */
 
   /**
+   * EEPROBE_Allreduce takes the same parameters
+   * as the default MPI Allreduce function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous and combines values from
+   * all processes and distributes the result back to all processes.
+   *
+   * @param sendbuf Address of send buffer.
+   * @param recvbuf Address of receive buffer.
+   * @param count Number of elements in send buffer.
+   * @param datatype Data type of elements of send buffer.
+   * @param op Reduce operation.
+   * @param comm Communicator (handle).
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Allreduce(const void *sendbuf, void *recvbuf, int count,
+		  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
+int
+EEPROBE_Allreduce_Switch(const void *sendbuf, void *recvbuf, int count,
+			 MPI_Datatype datatype, MPI_Op op, MPI_Comm comm,
+			 EEPROBE_Enable enable);
+
+/* ---------------------------------------------------------------------------------- */
+
+  /**
+   * EEPROBE_Alltoall takes the same parameters
+   * as the default MPI Alltoall function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous.
+   * All processes send data to all.
+   *
+   * @param sendbuf Address of send buffer.
+   * @param sendcount Number of elements to send to each process.
+   * @param sendtype Datatype of send buffer elements.
+   * @param recvbuf Address of receive buffer.
+   * @param recvcount Number of elements to receive from each process.
+   * @param recvtype Datatype of receive buffer elements.
+   * @param comm Communicator (handle).
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Alltoall(const void *sendbuf, int sendcount,
+		 MPI_Datatype sendtype, void *recvbuf, int recvcount,
+		 MPI_Datatype recvtype, MPI_Comm comm);
+int
+EEPROBE_Alltoall_Switch(const void *sendbuf, int sendcount,
+			MPI_Datatype sendtype, void *recvbuf, int recvcount,
+			MPI_Datatype recvtype, MPI_Comm comm,
+			EEPROBE_Enable enable);
+  
+/* ---------------------------------------------------------------------------------- */
+
+  /**
+   * EEPROBE_Alltoallv takes the same parameters
+   * as the default MPI Alltoallv function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous.
+   * All processes send different amount of data to, and receive different amount of
+   * data from, all processes.
+   *
+   * @param sendbuf Address of send buffer.
+   * @param sendcounts Integer array, where entry i specifies the number of elements to send to rank i.
+   * @param sdispls Integer array, where entry i specifies the displacement (offset from sendbuf, in units of sendtype) from which to send data to rank i.
+   * @param sendtype Datatype of send buffer elements.
+   * @param recvbuf Address of receive buffer.
+   * @param recvcounts Integer array, where entry j specifies the number of elements to receive from rank j.
+   * @param rdispls Integer array, where entry j specifies the displacement (offset from recvbuf, in units of recvtype) to which data from rank j should be written.
+   * @param recvtype Datatype of receive buffer elements.
+   * @param comm Communicator (handle).
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Alltoallv(const void *sendbuf, const int sendcounts[],
+		  const int sdispls[], MPI_Datatype sendtype,
+		  void *recvbuf, const int recvcounts[],
+		  const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm);
+int
+EEPROBE_Alltoallv_Switch(const void *sendbuf, const int sendcounts[],
+			 const int sdispls[], MPI_Datatype sendtype,
+			 void *recvbuf, const int recvcounts[],
+			 const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm,
+			 EEPROBE_Enable enable);
+
+  /* ---------------------------------------------------------------------------------- */
+
+  /**
+   * EEPROBE_Alltoallw takes the same parameters
+   * as the default MPI Alltoallw function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous.
+   * All processes send data of different types to, and receive data of different
+   * types from, all processes.
+   *
+   * @param sendbuf Address of send buffer.
+   * @param sendcounts Integer array, where entry i specifies the number of elements to send to rank i.
+   * @param sdispls Integer array, where entry i specifies the displacement (offset from sendbuf) from which to send data to rank i.
+   * @param sendtype Datatype array, where entry i specifies the datatype to use when sending data to rank i.
+   * @param recvbuf Address of receive buffer.
+   * @param recvcounts Integer array, where entry j specifies the number of elements to receive from rank j.
+   * @param rdispls Integer array, where entry j specifies the displacement (offset from recvbuf) to which data from rank j should be written.
+   * @param recvtype Datatype array, where entry j specifies the datatype to use when receiving data from rank j.
+   * @param comm Communicator (handle).
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Alltoallw(const void *sendbuf, const int sendcounts[],
+		  const int sdispls[], const MPI_Datatype sendtypes[],
+		  void *recvbuf, const int recvcounts[], const int rdispls[],
+		  const MPI_Datatype recvtypes[], MPI_Comm comm);
+int
+EEPROBE_Alltoallw_Switch(const void *sendbuf, const int sendcounts[],
+			 const int sdispls[], const MPI_Datatype sendtypes[],
+			 void *recvbuf, const int recvcounts[], const int rdispls[],
+			 const MPI_Datatype recvtypes[], MPI_Comm comm,
+			 EEPROBE_Enable enable);
+
+/* ---------------------------------------------------------------------------------- */
+
+  /**
    * Set the smallest yield time.
    * @param min_yield_time In nanoseconds, must be set within range [0;1000000000[
    */
@@ -155,6 +274,8 @@ long EEPROBE_getIncYieldTime();
    */
 long EEPROBE_getLastYieldTime();
 
+/* ---------------------------------------------------------------------------------- */
+  
   /**
    * Returns the total sleep duration since the beginning of the run.
    * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
@@ -182,6 +303,34 @@ unsigned long EEPROBE_getTotalSleepTimeWait();
    * @return Total sleep duration in nanoseconds.
    */
 unsigned long EEPROBE_getTotalSleepTimeReduce();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Allreduce since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeAllreduce();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Alltoall since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeAlltoall();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Alltoallv since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeAlltoallv();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Alltoallw since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeAlltoallw();
 
 /* ---------------------------------------------------------------------------------- */
   
