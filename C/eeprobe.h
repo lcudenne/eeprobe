@@ -162,6 +162,27 @@ long EEPROBE_getLastYieldTime();
    */
 unsigned long EEPROBE_getTotalSleepTime();
 
+  /**
+   * Returns the total sleep duration using EEPROBE_Probe since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeProbe();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Wait since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeWait();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Reduce since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeReduce();
+
 /* ---------------------------------------------------------------------------------- */
   
   /**

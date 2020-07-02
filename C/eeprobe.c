@@ -41,6 +41,14 @@
 
 /* ---------------------------------------------------------------------------------- */
 
+  /**
+   * Enum type used to identify the MPI action.
+   */
+typedef enum {EEPROBE_PROBE, EEPROBE_WAIT, EEPROBE_REDUCE} EEPROBE_ACTION;
+
+
+/* ---------------------------------------------------------------------------------- */
+
 static long _EEPROBE_LAST_YIELD_TIME = 0;
 
 static long _EEPROBE_MAX_YIELD_TIME = 1000;
@@ -49,7 +57,11 @@ static long _EEPROBE_MIN_YIELD_TIME = 0;
 
 static long _EEPROBE_INC_YIELD_TIME = 1;
 
-static unsigned long _EEPROBE_TOTAL_SLEEP_TIME = 0;
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_PROBE = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_WAIT = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_REDUCE = 0;
 
 /* ---------------------------------------------------------------------------------- */
 
@@ -96,7 +108,22 @@ EEPROBE_getLastYieldTime() {
 
 unsigned long
 EEPROBE_getTotalSleepTime() {
-  return _EEPROBE_TOTAL_SLEEP_TIME;
+  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeProbe() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeWait() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_WAIT;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeReduce() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_REDUCE;
 }
 
 /* ---------------------------------------------------------------------------------- */
@@ -109,6 +136,27 @@ EEPROBE_getTime() {
   gettimeofday(&tv, NULL);
 
   return ((unsigned long) 1000000 * tv.tv_sec + tv.tv_usec);
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+static void
+EEPROBE_updateTotalSleepTime(EEPROBE_ACTION action, unsigned long time) {
+
+  switch(action) {
+  case EEPROBE_PROBE:
+    _EEPROBE_TOTAL_SLEEP_TIME_PROBE += time;
+    break;
+  case EEPROBE_WAIT:
+    _EEPROBE_TOTAL_SLEEP_TIME_WAIT += time;
+    break;
+  case EEPROBE_REDUCE:
+    _EEPROBE_TOTAL_SLEEP_TIME_REDUCE += time;
+    break;
+  default:
+    break;
+  }
   
 }
 
@@ -152,7 +200,7 @@ EEPROBE_Probe_Switch(int source, int tag, MPI_Comm comm, MPI_Status * status,
 	clock_nanosleep(CLOCK_MONOTONIC, 0, &current_yield_duration, NULL);
 
 #if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
-	_EEPROBE_TOTAL_SLEEP_TIME += EEPROBE_getTime() - start;      
+	EEPROBE_updateTotalSleepTime(EEPROBE_PROBE, EEPROBE_getTime() - start);
 #endif
 
 	current_yield_duration.tv_nsec += _EEPROBE_INC_YIELD_TIME;
@@ -178,13 +226,10 @@ EEPROBE_Probe_Switch(int source, int tag, MPI_Comm comm, MPI_Status * status,
 
 /* ---------------------------------------------------------------------------------- */
 
-int
-EEPROBE_Wait(MPI_Request *request, MPI_Status *status) {
-  return EEPROBE_Wait_Switch(request, status, EEPROBE_ENABLE);
-}
 
-int
-EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
+static int
+EEPROBE_Wait_Core(MPI_Request *request, MPI_Status *status,
+		  EEPROBE_Enable enable, EEPROBE_ACTION action) {
 
 
 #if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
@@ -215,7 +260,7 @@ EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable ena
 	clock_nanosleep(CLOCK_MONOTONIC, 0, &current_yield_duration, NULL);
 
 #if EEPROBE_ENABLE_TOTAL_SLEEP_TIME
-	_EEPROBE_TOTAL_SLEEP_TIME += EEPROBE_getTime() - start;      
+	EEPROBE_updateTotalSleepTime(action, EEPROBE_getTime() - start);
 #endif
 
 	current_yield_duration.tv_nsec += _EEPROBE_INC_YIELD_TIME;
@@ -239,6 +284,16 @@ EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable ena
   
 }
 
+int
+EEPROBE_Wait(MPI_Request *request, MPI_Status *status) {
+  return EEPROBE_Wait_Core(request, status, EEPROBE_ENABLE, EEPROBE_WAIT);
+}
+
+
+int
+EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
+  return EEPROBE_Wait_Core(request, status, enable, EEPROBE_WAIT);
+}
 
 /* ---------------------------------------------------------------------------------- */
 
@@ -265,7 +320,7 @@ EEPROBE_Reduce_Switch(const void *sendbuf, void *recvbuf, int count,
 
     errno = MPI_Ireduce(sendbuf, recvbuf, count, datatype, op, root, comm, &request);
 
-    errno = EEPROBE_Wait_Switch(&request, &status, enable);
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_REDUCE);
 
   } else {
 
