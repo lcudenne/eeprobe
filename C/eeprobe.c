@@ -51,7 +51,8 @@ typedef enum {
 	      EEPROBE_ALLREDUCE,
 	      EEPROBE_ALLTOALL,
 	      EEPROBE_ALLTOALLV,
-	      EEPROBE_ALLTOALLW
+	      EEPROBE_ALLTOALLW,
+	      EEPROBE_BCAST
 } EEPROBE_ACTION;
 
 
@@ -78,6 +79,8 @@ static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL = 0;
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV = 0;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_BCAST = 0;
 
 
 /* ---------------------------------------------------------------------------------- */
@@ -125,7 +128,7 @@ EEPROBE_getLastYieldTime() {
 
 unsigned long
 EEPROBE_getTotalSleepTime() {
-  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW;
+  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW + _EEPROBE_TOTAL_SLEEP_TIME_BCAST;
 }
 
 unsigned long
@@ -161,6 +164,11 @@ EEPROBE_getTotalSleepTimeAlltoallv() {
 unsigned long
 EEPROBE_getTotalSleepTimeAlltoallw() {
   return _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeBcast() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_BCAST;
 }
 
 /* ---------------------------------------------------------------------------------- */
@@ -202,6 +210,9 @@ EEPROBE_updateTotalSleepTime(EEPROBE_ACTION action, unsigned long time) {
     break;
   case EEPROBE_ALLTOALLW:
     _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW += time;
+    break;
+  case EEPROBE_BCAST:
+    _EEPROBE_TOTAL_SLEEP_TIME_BCAST += time;
     break;
   default:
     break;
@@ -557,3 +568,39 @@ EEPROBE_Alltoallw_Switch(const void *sendbuf, const int sendcounts[],
 
 /* ---------------------------------------------------------------------------------- */
 
+int
+EEPROBE_Bcast(void *buffer, int count, MPI_Datatype datatype,
+	      int root, MPI_Comm comm) {
+
+  return EEPROBE_Bcast_Switch(buffer, count, datatype, root, comm, EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Bcast_Switch(void *buffer, int count, MPI_Datatype datatype,
+		     int root, MPI_Comm comm, EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Ibcast(buffer, count, datatype, root, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_BCAST);
+
+  } else {
+
+    errno = MPI_Bcast(buffer, count, datatype, root, comm);
+
+  }
+
+  return errno;
+  
+}
+
+
+/* ---------------------------------------------------------------------------------- */

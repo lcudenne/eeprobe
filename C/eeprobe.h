@@ -229,7 +229,30 @@ EEPROBE_Alltoallw_Switch(const void *sendbuf, const int sendcounts[],
 			 void *recvbuf, const int recvcounts[], const int rdispls[],
 			 const MPI_Datatype recvtypes[], MPI_Comm comm,
 			 EEPROBE_Enable enable);
+/* ---------------------------------------------------------------------------------- */
 
+  /**
+   * EEPROBE_Bcast takes the same parameters
+   * as the default MPI Bcast function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous and broadcasts a message
+   * from the process with rank root to all other processes of the group.
+   *
+   * @param buffer Address of send buffer.
+   * @param count Number of entries in buffer.
+   * @param datatype Data type of buffer.
+   * @param root Rank of broadcast root.
+   * @param comm Communicator (handle).
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Bcast(void *buffer, int count, MPI_Datatype datatype,
+	      int root, MPI_Comm comm);
+int
+EEPROBE_Bcast_Switch(void *buffer, int count, MPI_Datatype datatype,
+		     int root, MPI_Comm comm, EEPROBE_Enable enable);
+
+  
 /* ---------------------------------------------------------------------------------- */
 
   /**
@@ -331,6 +354,13 @@ unsigned long EEPROBE_getTotalSleepTimeAlltoallv();
    * @return Total sleep duration in nanoseconds.
    */
 unsigned long EEPROBE_getTotalSleepTimeAlltoallw();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Bcast since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeBcast();
 
 /* ---------------------------------------------------------------------------------- */
   
