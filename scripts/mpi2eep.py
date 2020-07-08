@@ -40,7 +40,8 @@ dic_c = {'MPI_Probe': 'EEPROBE_Probe',
          'MPI_Alltoall' : 'EEPROBE_Alltoall',
          'MPI_Alltoallv' : 'EEPROBE_Alltoallv',
          'MPI_Alltoallw' : 'EEPROBE_Alltoallw',
-         'MPI_Bcast' : 'EEPROBE_Bcast'}
+         'MPI_Bcast' : 'EEPROBE_Bcast',
+         'MPI_Barrier' : 'EEPROBE_Barrier'}
 
 # ----------------------------------------------------------------------------------
 

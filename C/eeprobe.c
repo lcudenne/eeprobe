@@ -53,7 +53,8 @@ typedef enum {
 	      EEPROBE_ALLTOALL,
 	      EEPROBE_ALLTOALLV,
 	      EEPROBE_ALLTOALLW,
-	      EEPROBE_BCAST
+	      EEPROBE_BCAST,
+	      EEPROBE_BARRIER
 } EEPROBE_ACTION;
 
 
@@ -84,6 +85,8 @@ static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV = 0;
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW = 0;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_BCAST = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_BARRIER = 0;
 
 
 /* ---------------------------------------------------------------------------------- */
@@ -131,7 +134,7 @@ EEPROBE_getLastYieldTime() {
 
 unsigned long
 EEPROBE_getTotalSleepTime() {
-  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_RECV + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW + _EEPROBE_TOTAL_SLEEP_TIME_BCAST;
+  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_RECV + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW + _EEPROBE_TOTAL_SLEEP_TIME_BCAST + _EEPROBE_TOTAL_SLEEP_TIME_BARRIER;
 }
 
 unsigned long
@@ -179,6 +182,11 @@ EEPROBE_getTotalSleepTimeBcast() {
   return _EEPROBE_TOTAL_SLEEP_TIME_BCAST;
 }
 
+unsigned long
+EEPROBE_getTotalSleepTimeBarrier() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_BARRIER;
+}
+
 /* ---------------------------------------------------------------------------------- */
 
 unsigned long
@@ -224,6 +232,9 @@ EEPROBE_updateTotalSleepTime(EEPROBE_ACTION action, unsigned long time) {
     break;
   case EEPROBE_BCAST:
     _EEPROBE_TOTAL_SLEEP_TIME_BCAST += time;
+    break;
+  case EEPROBE_BARRIER:
+    _EEPROBE_TOTAL_SLEEP_TIME_BARRIER += time;
     break;
   default:
     break;
@@ -640,6 +651,40 @@ EEPROBE_Bcast_Switch(void *buffer, int count, MPI_Datatype datatype,
   } else {
 
     errno = MPI_Bcast(buffer, count, datatype, root, comm);
+
+  }
+
+  return errno;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+int
+EEPROBE_Barrier(MPI_Comm comm) {
+
+  return EEPROBE_Barrier_Switch(comm, EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Barrier_Switch(MPI_Comm comm, EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Ibarrier(comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_BARRIER);
+
+  } else {
+
+    errno = MPI_Barrier(comm);
 
   }
 
