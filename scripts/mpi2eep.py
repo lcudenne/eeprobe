@@ -34,6 +34,7 @@ import glob
 
 dic_c = {'MPI_Probe': 'EEPROBE_Probe',
          'MPI_Wait' : 'EEPROBE_Wait',
+         'MPI_Recv' : 'EEPROBE_Recv',
          'MPI_Reduce' : 'EEPROBE_Reduce',
          'MPI_Allreduce' : 'EEPROBE_Allreduce',
          'MPI_Alltoall' : 'EEPROBE_Alltoall',
@@ -56,7 +57,7 @@ def processFiles(files, filetype, dic):
             if count > 0:
                 with open(fpath, 'w') as fw:
                     fw.write("#include \"C/eeprobe.h\"\n" + filedata)
-                print('file type ' + filetype + ' path ' + fpath + ' replaced ' + str(count) + ' MPI operation(s)')
+                    print('file type ' + filetype + ' path ' + fpath + ' replaced ' + str(count) + ' MPI operation(s)')
 
 
 # ----------------------------------------------------------------------------------

@@ -87,6 +87,32 @@ EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable ena
 /* ---------------------------------------------------------------------------------- */
 
   /**
+   * EEPROBE_Recv takes the same parameters
+   * as the default MPI Recv function and a specific parameter to enable or disable
+   * the micro-sleeping mechanism. This function is synchronous and performs a
+   * standard-mode blocking receive.
+   *
+   * @param buf Initial address of receive buffer.
+   * @param count Maximum number of elements to receive.
+   * @param datatype Datatype of each receive buffer entry.
+   * @param source Rank of source.
+   * @param tag Message tag.
+   * @param comm Communicator (handle).
+   * @param status Status object.
+   * @param enable Enable or disable the micro-sleep mechanism (Switch only).
+   * @return MPI routine error value.
+   */
+int
+EEPROBE_Recv(void *buf, int count, MPI_Datatype datatype,
+	     int source, int tag, MPI_Comm comm, MPI_Status *status);
+int
+EEPROBE_Recv_Switch(void *buf, int count, MPI_Datatype datatype,
+		    int source, int tag, MPI_Comm comm, MPI_Status *status,
+		    EEPROBE_Enable enable);
+
+/* ---------------------------------------------------------------------------------- */
+  
+  /**
    * EEPROBE_Reduce takes the same parameters
    * as the default MPI Reduce function and a specific parameter to enable or disable
    * the micro-sleeping mechanism. This function is synchronous and reduces values on
@@ -319,6 +345,13 @@ unsigned long EEPROBE_getTotalSleepTimeProbe();
    * @return Total sleep duration in nanoseconds.
    */
 unsigned long EEPROBE_getTotalSleepTimeWait();
+
+  /**
+   * Returns the total sleep duration using EEPROBE_Recv since the beginning of the run.
+   * EEPROBE_ENABLE_TOTAL_SLEEP_TIME must be set to 1 in this file, returns 0 otherwise.
+   * @return Total sleep duration in nanoseconds.
+   */
+unsigned long EEPROBE_getTotalSleepTimeRecv();
 
   /**
    * Returns the total sleep duration using EEPROBE_Reduce since the beginning of the run.

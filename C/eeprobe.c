@@ -47,6 +47,7 @@
 typedef enum {
 	      EEPROBE_PROBE,
 	      EEPROBE_WAIT,
+	      EEPROBE_RECV,
 	      EEPROBE_REDUCE,
 	      EEPROBE_ALLREDUCE,
 	      EEPROBE_ALLTOALL,
@@ -69,6 +70,8 @@ static long _EEPROBE_INC_YIELD_TIME = 1;
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_PROBE = 0;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_WAIT = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_RECV = 0;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_REDUCE = 0;
 
@@ -128,7 +131,7 @@ EEPROBE_getLastYieldTime() {
 
 unsigned long
 EEPROBE_getTotalSleepTime() {
-  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW + _EEPROBE_TOTAL_SLEEP_TIME_BCAST;
+  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_RECV + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW + _EEPROBE_TOTAL_SLEEP_TIME_BCAST;
 }
 
 unsigned long
@@ -139,6 +142,11 @@ EEPROBE_getTotalSleepTimeProbe() {
 unsigned long
 EEPROBE_getTotalSleepTimeWait() {
   return _EEPROBE_TOTAL_SLEEP_TIME_WAIT;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeRecv() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_RECV;
 }
 
 unsigned long
@@ -195,6 +203,9 @@ EEPROBE_updateTotalSleepTime(EEPROBE_ACTION action, unsigned long time) {
     break;
   case EEPROBE_WAIT:
     _EEPROBE_TOTAL_SLEEP_TIME_WAIT += time;
+    break;
+  case EEPROBE_RECV:
+    _EEPROBE_TOTAL_SLEEP_TIME_RECV += time;
     break;
   case EEPROBE_REDUCE:
     _EEPROBE_TOTAL_SLEEP_TIME_REDUCE += time;
@@ -353,6 +364,40 @@ EEPROBE_Wait(MPI_Request *request, MPI_Status *status) {
 int
 EEPROBE_Wait_Switch(MPI_Request *request, MPI_Status *status, EEPROBE_Enable enable) {
   return EEPROBE_Wait_Core(request, status, enable, EEPROBE_WAIT);
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+
+int
+EEPROBE_Recv(void *buf, int count, MPI_Datatype datatype,
+	     int source, int tag, MPI_Comm comm, MPI_Status *status) {
+  return EEPROBE_Recv_Switch(buf, count, datatype, source, tag, comm, status, EEPROBE_ENABLE);
+}
+
+int
+EEPROBE_Recv_Switch(void *buf, int count, MPI_Datatype datatype,
+		    int source, int tag, MPI_Comm comm, MPI_Status *status,
+		    EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Irecv(buf, count, datatype, source, tag, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, status, enable, EEPROBE_RECV);
+
+  } else {
+
+    errno = MPI_Recv(buf, count, datatype, source, tag, comm, status);
+
+  }
+
+  return errno;
+
 }
 
 /* ---------------------------------------------------------------------------------- */
