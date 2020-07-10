@@ -25,8 +25,8 @@ from enum import Enum
 # MPI
 from mpi4py import MPI
 
-# monotonic_ns
-from time import monotonic_ns
+# monotonic
+from time import monotonic
 
 # sleep
 from time import sleep
@@ -40,7 +40,7 @@ class EEPROBE_Enable(Enum):
 # ----------------------------------------------------------------------------------
 
 def EEPROBE_getTime():
-    return monotonic_ns() * 1000
+    return int(round(monotonic() * 1E6))
 
 
 # ----------------------------------------------------------------------------------
