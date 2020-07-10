@@ -54,6 +54,12 @@ typedef enum {
 	      EEPROBE_ALLTOALLV,
 	      EEPROBE_ALLTOALLW,
 	      EEPROBE_BCAST,
+	      EEPROBE_SCATTER,
+	      EEPROBE_SCATTERV,
+	      EEPROBE_GATHER,
+	      EEPROBE_GATHERV,
+	      EEPROBE_ALLGATHER,
+	      EEPROBE_ALLGATHERV,
 	      EEPROBE_BARRIER
 } EEPROBE_ACTION;
 
@@ -85,6 +91,18 @@ static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV = 0;
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW = 0;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_BCAST = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_SCATTER = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_SCATTERV = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_GATHER = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_GATHERV = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHER = 0;
+
+static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHERV = 0;
 
 static unsigned long _EEPROBE_TOTAL_SLEEP_TIME_BARRIER = 0;
 
@@ -134,7 +152,22 @@ EEPROBE_getLastYieldTime() {
 
 unsigned long
 EEPROBE_getTotalSleepTime() {
-  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE + _EEPROBE_TOTAL_SLEEP_TIME_WAIT + _EEPROBE_TOTAL_SLEEP_TIME_RECV + _EEPROBE_TOTAL_SLEEP_TIME_REDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV + _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW + _EEPROBE_TOTAL_SLEEP_TIME_BCAST + _EEPROBE_TOTAL_SLEEP_TIME_BARRIER;
+  return _EEPROBE_TOTAL_SLEEP_TIME_PROBE +
+    _EEPROBE_TOTAL_SLEEP_TIME_WAIT +
+    _EEPROBE_TOTAL_SLEEP_TIME_RECV +
+    _EEPROBE_TOTAL_SLEEP_TIME_REDUCE +
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLREDUCE +
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALL +
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLV +
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLTOALLW +
+    _EEPROBE_TOTAL_SLEEP_TIME_BCAST +
+    _EEPROBE_TOTAL_SLEEP_TIME_SCATTER +
+    _EEPROBE_TOTAL_SLEEP_TIME_SCATTERV +
+    _EEPROBE_TOTAL_SLEEP_TIME_GATHER +
+    _EEPROBE_TOTAL_SLEEP_TIME_GATHERV +
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHER +
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHERV +
+    _EEPROBE_TOTAL_SLEEP_TIME_BARRIER;
 }
 
 unsigned long
@@ -180,6 +213,36 @@ EEPROBE_getTotalSleepTimeAlltoallw() {
 unsigned long
 EEPROBE_getTotalSleepTimeBcast() {
   return _EEPROBE_TOTAL_SLEEP_TIME_BCAST;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeScatter() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_SCATTER;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeScatterv() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_SCATTERV;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeGather() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_GATHER;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeGatherv() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_GATHERV;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeAllgather() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHER;
+}
+
+unsigned long
+EEPROBE_getTotalSleepTimeAllgatherv() {
+  return _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHERV;
 }
 
 unsigned long
@@ -232,6 +295,24 @@ EEPROBE_updateTotalSleepTime(EEPROBE_ACTION action, unsigned long time) {
     break;
   case EEPROBE_BCAST:
     _EEPROBE_TOTAL_SLEEP_TIME_BCAST += time;
+    break;
+  case EEPROBE_SCATTER:
+    _EEPROBE_TOTAL_SLEEP_TIME_SCATTER += time;
+    break;
+  case EEPROBE_SCATTERV:
+    _EEPROBE_TOTAL_SLEEP_TIME_SCATTERV += time;
+    break;
+  case EEPROBE_GATHER:
+    _EEPROBE_TOTAL_SLEEP_TIME_GATHER += time;
+    break;
+  case EEPROBE_GATHERV:
+    _EEPROBE_TOTAL_SLEEP_TIME_GATHERV += time;
+    break;
+  case EEPROBE_ALLGATHER:
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHER += time;
+    break;
+  case EEPROBE_ALLGATHERV:
+    _EEPROBE_TOTAL_SLEEP_TIME_ALLGATHERV += time;
     break;
   case EEPROBE_BARRIER:
     _EEPROBE_TOTAL_SLEEP_TIME_BARRIER += time;
@@ -651,6 +732,261 @@ EEPROBE_Bcast_Switch(void *buffer, int count, MPI_Datatype datatype,
   } else {
 
     errno = MPI_Bcast(buffer, count, datatype, root, comm);
+
+  }
+
+  return errno;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+int
+EEPROBE_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+		void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+		MPI_Comm comm) {
+
+  return EEPROBE_Scatter_Switch(sendbuf, sendcount, sendtype,
+				recvbuf, recvcount, recvtype, root, comm,
+				EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Scatter_Switch(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+		       void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+		       MPI_Comm comm, EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Iscatter(sendbuf, sendcount, sendtype,
+			 recvbuf, recvcount, recvtype, root, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_SCATTER);
+
+  } else {
+
+    errno = MPI_Scatter(sendbuf, sendcount, sendtype,
+			recvbuf, recvcount, recvtype, root, comm);
+
+  }
+
+  return errno;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+int
+EEPROBE_Scatterv(const void *sendbuf, const int sendcounts[], const int displs[],
+		 MPI_Datatype sendtype, void *recvbuf, int recvcount,
+		 MPI_Datatype recvtype, int root, MPI_Comm comm) {
+
+  return EEPROBE_Scatterv_Switch(sendbuf, sendcounts, displs, sendtype,
+				 recvbuf, recvcount, recvtype, root, comm,
+				 EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Scatterv_Switch(const void *sendbuf, const int sendcounts[], const int displs[],
+			MPI_Datatype sendtype, void *recvbuf, int recvcount,
+			MPI_Datatype recvtype, int root, MPI_Comm comm,
+			EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Iscatterv(sendbuf, sendcounts, displs, sendtype,
+			  recvbuf, recvcount, recvtype, root, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_SCATTERV);
+
+  } else {
+
+    errno = MPI_Scatterv(sendbuf, sendcounts, displs, sendtype,
+			 recvbuf, recvcount, recvtype, root, comm);
+
+  }
+
+  return errno;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+int
+EEPROBE_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+	       void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+	       MPI_Comm comm) {
+
+  return EEPROBE_Gather_Switch(sendbuf, sendcount, sendtype,
+			       recvbuf, recvcount, recvtype, root, comm,
+			       EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Gather_Switch(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+		      void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+		      MPI_Comm comm, EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Igather(sendbuf, sendcount, sendtype,
+			recvbuf, recvcount, recvtype, root, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_GATHER);
+
+  } else {
+
+    errno = MPI_Gather(sendbuf, sendcount, sendtype,
+		       recvbuf, recvcount, recvtype, root, comm);
+
+  }
+
+  return errno;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+int
+EEPROBE_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+		void *recvbuf, const int recvcounts[], const int displs[],
+		MPI_Datatype recvtype, int root, MPI_Comm comm) {
+
+  return EEPROBE_Gatherv_Switch(sendbuf, sendcount, sendtype,
+				recvbuf, recvcounts, displs, recvtype, root, comm,
+				EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Gatherv_Switch(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+		       void *recvbuf, const int recvcounts[], const int displs[],
+		       MPI_Datatype recvtype, int root, MPI_Comm comm,
+		       EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Igatherv(sendbuf, sendcount, sendtype,
+			 recvbuf, recvcounts, displs, recvtype, root, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_GATHERV);
+
+  } else {
+
+    errno = MPI_Gatherv(sendbuf, sendcount, sendtype,
+			recvbuf, recvcounts, displs, recvtype, root, comm);
+
+  }
+
+  return errno;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+int
+EEPROBE_Allgather(const void *sendbuf, int  sendcount,
+		  MPI_Datatype sendtype, void *recvbuf, int recvcount,
+		  MPI_Datatype recvtype, MPI_Comm comm) {
+
+  return EEPROBE_Allgather_Switch(sendbuf, sendcount, sendtype,
+				  recvbuf, recvcount, recvtype, comm,
+				  EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Allgather_Switch(const void *sendbuf, int  sendcount,
+			 MPI_Datatype sendtype, void *recvbuf, int recvcount,
+			 MPI_Datatype recvtype, MPI_Comm comm, EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Iallgather(sendbuf, sendcount, sendtype,
+			   recvbuf, recvcount, recvtype, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_ALLGATHER);
+
+  } else {
+
+    errno = MPI_Allgather(sendbuf, sendcount, sendtype,
+			  recvbuf, recvcount, recvtype, comm);
+
+  }
+
+  return errno;
+  
+}
+
+/* ---------------------------------------------------------------------------------- */
+
+int
+EEPROBE_Allgatherv(const void *sendbuf, int sendcount,
+		   MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+		   const int displs[], MPI_Datatype recvtype, MPI_Comm comm) {
+
+  return EEPROBE_Allgatherv_Switch(sendbuf, sendcount, sendtype,
+				   recvbuf, recvcounts, displs, recvtype, comm,
+				   EEPROBE_ENABLE);
+  
+}
+
+int
+EEPROBE_Allgatherv_Switch(const void *sendbuf, int sendcount,
+			  MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+			  const int displs[], MPI_Datatype recvtype, MPI_Comm comm,
+			  EEPROBE_Enable enable) {
+
+  MPI_Request request;
+
+  MPI_Status status;
+  
+  int errno = MPI_SUCCESS;
+
+  if (enable == EEPROBE_ENABLE) {
+
+    errno = MPI_Iallgatherv(sendbuf, sendcount, sendtype,
+			    recvbuf, recvcounts, displs, recvtype, comm, &request);
+
+    errno = EEPROBE_Wait_Core(&request, &status, enable, EEPROBE_ALLGATHERV);
+
+  } else {
+
+    errno = MPI_Allgatherv(sendbuf, sendcount, sendtype,
+			   recvbuf, recvcounts, displs, recvtype, comm);
 
   }
 
