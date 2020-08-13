@@ -38,6 +38,13 @@
   an open-source implementation of this strategy for C MPI runtimes
   and the mpi4py Python runtime.
 
+## How to cite this work
+
+ Cudennec, L. Adaptive message passing polling for energy efficiency:
+ Application to software‐distributed shared memory over heterogeneous
+ computing resources. Concurrency Computat Pract
+ Exper. 2020;e5960. [https://doi.org/10.1002/cpe.5960](https://doi.org/10.1002/cpe.5960)
+
 ## Quick start
 
 The `eetest` program is a basic send-receive MPI application in which
