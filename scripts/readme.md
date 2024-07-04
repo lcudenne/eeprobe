@@ -8,7 +8,7 @@ Download and extract the latest NPB source code form https://www.nas.nasa.gov/so
 tar xvzf NPB3.4.3.tar.gz
 ```
 
-Copy `eeprobe/C/eeprobe.c` and `eeprobe/C/eeprobe.h` files within the `NPB3.4.3/NPB3.4-MPI/common/` directory.
+Copy `eeprobe/C/eeprobe.c` and `eeprobe/C/eeprobe.h` files into the `NPB3.4.3/NPB3.4-MPI/common/` directory.
 
 Add the following lines to the `NPB3.4.3/NPB3.4-MPI/sys/make.common` file (next to similar rules) :
 
