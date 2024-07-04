@@ -51,7 +51,7 @@ dic_c = {'MPI_Probe': 'EEPROBE_Probe',
 
 # ----------------------------------------------------------------------------------
 
-def processFiles(files, filetype, dic):
+def processFiles(files, filetype, dic, includepath=""):
     for fpath in files:
         filedata=None
         with open(fpath, 'r') as fr:
@@ -62,8 +62,9 @@ def processFiles(files, filetype, dic):
                 count += filedata.count(mpi_key)
                 filedata = filedata.replace(mpi_key, dic[mpi_key])
             if count > 0:
+                filedata = filedata.replace("MPI_Finalize();", "printf(\"rank %d EEProbe sleep time (ns) probe %lu wait %lu reduce %lu allreduce %lu alltoall %lu alltoallv %lu bcast %lu\\n\", my_rank, EEPROBE_getTotalSleepTimeProbe(), EEPROBE_getTotalSleepTimeWait(), EEPROBE_getTotalSleepTimeReduce(), EEPROBE_getTotalSleepTimeAllreduce(), EEPROBE_getTotalSleepTimeAlltoall(), EEPROBE_getTotalSleepTimeAlltoallv(), EEPROBE_getTotalSleepTimeBcast());\nMPI_Finalize();")
                 with open(fpath, 'w') as fw:
-                    fw.write("#include \"C/eeprobe.h\"\n" + filedata)
+                    fw.write("#include \""+includepath+"eeprobe.h\"\n" + filedata)
                     print('file type ' + filetype + ' path ' + fpath + ' replaced ' + str(count) + ' MPI operation(s)')
 
 
@@ -82,6 +83,8 @@ def main(argv):
     parser = argparse.ArgumentParser(description='MPI to EEProbe conversion program. Automatically replace MPI collective operations to equivalent EEP collective operations', usage='python3 ./mpi2eep.py [options]')
     parser.add_argument('--source', type=str, required=True,
                         help='path to the directory containing the source code to process')
+    parser.add_argument('--includepath', type=str, required=False,
+                        help='path to the directory containing the eeprobe.h file')
     args = parser.parse_args()
 
     print('mpi2eep: MPI to EEProbe conversion program')
@@ -89,7 +92,10 @@ def main(argv):
     cfiles = walkFileSystem(args.source)
 
     if cfiles:
-        processFiles(cfiles, "C", dic_c)
+        includepath=""
+        if args.includepath:
+            includepath=args.includepath
+        processFiles(cfiles, "C", dic_c, includepath)
     
     
     

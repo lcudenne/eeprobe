@@ -103,14 +103,19 @@ c$$$ ---------------------------------------------------------------------------
       use EEPROBE_Parameters
       
       integer SOURCE, TAG, COMM, STATUS, IERROR
-      logical ENABLE
-
+      logical,optional ENABLE
+      
       logical :: FLAG = .FALSE.
       
       integer*8 :: current_yield_duration = 0
       integer :: start = 0
-      
-      if (ENABLE) then
+
+      logical :: EENABLE = .TRUE.
+      if (present(ENABLE)) then
+         EENABLE = ENABLE
+      end if
+
+      if (EENABLE) then
          
  10      CALL MPI_IPROBE(SOURCE, TAG, COMM, FLAG, STATUS, IERROR)
          if ((.NOT. FLAG) .AND. (IERROR == MPI_SUCCESS)) then
